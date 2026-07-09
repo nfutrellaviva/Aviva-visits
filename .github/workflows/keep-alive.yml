@@ -1,0 +1,26 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 14:00 UTC
+    - cron: '0 14 */3 * *'
+  workflow_dispatch:  # allows manual trigger from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase to prevent auto-pause
+        run: |
+          echo "Pinging Supabase database..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://ncxqdesmopgvljuklxls.supabase.co/rest/v1/site_visits?select=id&limit=1" \
+            -H "apikey: sb_publishable_oFiW3qS9so3GJ8E4qSuyRQ_G_ZtZY1Q" \
+            -H "Authorization: Bearer sb_publishable_oFiW3qS9so3GJ8E4qSuyRQ_G_ZtZY1Q")
+          echo "HTTP status: $RESPONSE"
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
+            echo "Success - database is active."
+          else
+            echo "Warning - unexpected status code: $RESPONSE"
+            exit 1
+          fi
